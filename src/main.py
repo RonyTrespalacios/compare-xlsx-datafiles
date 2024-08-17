@@ -14,46 +14,46 @@ def csv_to_xlsx(csv_file):
     return output
 
 # Título y descripción de la aplicación
-st.title("Data Processing App")
+st.title("📊 Data Processing App")
 
 # Sección 1: Convertidor de CSV a Excel
-st.header("1. CSV 2 Excel Converter")
+st.header("🔄 CSV 2 Excel Converter")
 
 # Cargador de archivos CSV
-uploaded_csv = st.file_uploader("Choose a CSV file", type="csv", key="csv_upload")
+uploaded_csv = st.file_uploader("📁 Choose a CSV file", type="csv", key="csv_upload")
 
 # Entrada de texto para el nombre del archivo de salida
-output_filename_csv = st.text_input("Enter Output File Name (without extension)", value="contacts")
+output_filename_csv = st.text_input("💾 Enter Output File Name (without extension)", value="contacts")
 
 if uploaded_csv is not None:
     # Convertir CSV a Excel en memoria
     excel_data = csv_to_xlsx(uploaded_csv)
     
     st.download_button(
-        label="Download Excel file",
+        label="⬇️ Download Excel file",
         data=excel_data,
         file_name=f"{output_filename_csv}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
 # Sección 2: Procesar Archivos Excel
-st.header("2. Compare Excel Files (Contactos and Egresados)")
+st.header("🔍 Compare Excel Files (Contactos and Egresados)")
 
 # Título y descripción
-st.write("This application processes Excel files by matching and sorting data.")
+st.write("📑 This application processes Excel files by matching and sorting data.")
 
 # Cargador de archivos para Contactos y Egresados
-contactos_file = st.file_uploader("Upload Contactos File", type=["xlsx"], key="contactos_upload")
-egresados_file = st.file_uploader("Upload Egresados File", type=["xlsx"], key="egresados_upload")
+contactos_file = st.file_uploader("📂 Upload Contactos File", type=["xlsx"], key="contactos_upload")
+egresados_file = st.file_uploader("📂 Upload Egresados File", type=["xlsx"], key="egresados_upload")
 
 # Entrada de texto para el nombre del archivo de salida
-output_filename = st.text_input("Enter Output File Name (without extension)", value="result")
+output_filename = st.text_input("💾 Enter Output File Name (without extension)", value="result")
 
 # Barra de progreso
 progress_bar = st.progress(0)
 
 # Botón para procesar archivos
-if st.button("Compare and Sort"):
+if st.button("⚙️ Match and Sort Files"):
     if contactos_file and egresados_file:
         # Crear flujos binarios en memoria para los archivos subidos
         contactos_data = BytesIO(contactos_file.getvalue())
@@ -68,12 +68,12 @@ if st.button("Compare and Sort"):
             output_data.seek(0)  # Restablecer el cursor al principio del stream
 
             st.download_button(
-                label="Download Processed File",
+                label="⬇️ Download Processed File",
                 data=output_data,
                 file_name=f"{output_filename}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+            st.error(f"⚠️ An error occurred: {str(e)}")
     else:
-        st.error("Please upload both Contactos and Egresados files.")
+        st.error("⚠️ Please upload both Contactos and Egresados files.")
