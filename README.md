@@ -17,26 +17,22 @@ source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 
 Install the necessary Python packages to run the application:
 
+try:
+
+```bash
+pip install -r requirements.txt
+```
+
+or : 
+
 ```bash
 pip install pandas
 pip install PyQt5
 pip install openpyxl
 ```
 
-If you need to package the application into a standalone executable, install PyInstaller:
-
-```bash
-pip install pyinstaller
-```
-
 To run the application, navigate to the /src directory and execute:
 
 ```bash
-python main.py
-```
-
-To package the application into a .exe file, use the following command from within the /src directory:
-
-```bash
-pyinstaller --onefile --windowed main.py
+streamlit run main.py
 ```
