@@ -53,7 +53,7 @@ output_filename = st.text_input("Enter Output File Name (without extension)", va
 progress_bar = st.progress(0)
 
 # Botón para procesar archivos
-if st.button("Process Files"):
+if st.button("Compare and Sort"):
     if contactos_file and egresados_file:
         # Crear flujos binarios en memoria para los archivos subidos
         contactos_data = BytesIO(contactos_file.getvalue())
