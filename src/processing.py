@@ -53,12 +53,14 @@ def ajustar_filas_y_columnas(worksheet):
         for cell in row:
             cell.alignment = Alignment(wrap_text=True, vertical='top')
             if cell.value:
-                cell_height = cell.value.count('\n') + 1
+                # Ensure the value is a string before using count()
+                cell_text = str(cell.value)
+                cell_height = cell_text.count('\n') + 1
                 if cell_height > max_height:
                     max_height = cell_height
         worksheet.row_dimensions[cell.row].height = max_height * 15  # Approximate height per line
 
-def generar_archivo_combinado(contactos_path, egresados_path, output_path, update_progress):
+def generar_archivo_combinado(contactos_path, egresados_path, output_path, progress_bar):
     contactos_df, egresados_df = preparar_dataframes(contactos_path, egresados_path)
     contactos_df['Nombre'] = contactos_df['Nombre'].apply(normalize_name)
     egresados_df['Nombres'] = egresados_df['Nombres'].apply(normalize_name)
@@ -100,7 +102,7 @@ def generar_archivo_combinado(contactos_path, egresados_path, output_path, updat
             })
 
         # Update progress
-        update_progress.emit(int((idx + 1) / total_rows * 100))
+        progress_bar.progress(int((idx + 1) / total_rows * 100))
 
     # Convertir los resultados en un DataFrame
     resultados_df = pd.DataFrame(resultados)
