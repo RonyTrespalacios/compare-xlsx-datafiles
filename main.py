@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
-import gdown
 from processing import generar_archivo_combinado
 
 def csv_to_xlsx(csv_file):
@@ -13,19 +12,6 @@ def csv_to_xlsx(csv_file):
     df.to_excel(output, index=False, engine='openpyxl')
     output.seek(0)  # Mover el cursor al principio del stream
     return output
-
-def descargar_archivo_de_drive(url):
-    # Descargar archivo desde Google Drive
-    output = BytesIO()
-    gdown.download(url, output, quiet=True)
-    output.seek(0)
-    return output
-
-# URLs de los archivos en Google Drive (con IDs extraídos)
-urls = {
-    "consulta_rector.xlsx": "https://drive.google.com/uc?id=1yuSFCLANAEr7OsRRSvDU73olHp3WneGr",
-    "consulta_egresados.xlsx": "https://drive.google.com/uc?id=1UAYVyExPRdp4BfZ7jR4B92YfcMFbpBHO"
-}
 
 # Título y descripción de la aplicación
 st.title("📊 Compara tus contactos con la base de datos de habilitados a votar!!")
@@ -66,13 +52,13 @@ if st.button("Click para comparar!! 👇"):
             else:
                 contactos_data = BytesIO(contactos_file.getvalue())
 
-        # Mostrar indicador de carga mientras se descarga la base de datos
-        with st.spinner('Descargando la base de datos seleccionada...'):
-            # Descargar el archivo de la base de datos seleccionada desde Google Drive
+        # Mostrar indicador de carga mientras se carga la base de datos local
+        with st.spinner('Cargando la base de datos seleccionada...'):
             try:
-                egresados_data = descargar_archivo_de_drive(urls[db_file])
+                with open(db_file, 'rb') as f:
+                    egresados_data = BytesIO(f.read())
             except Exception as e:
-                st.error(f"⚠️ Ocurrió un error al descargar la base de datos: {str(e)}")
+                st.error(f"⚠️ Ocurrió un error al cargar la base de datos: {str(e)}")
                 egresados_data = None
 
         if egresados_data:
