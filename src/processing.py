@@ -4,10 +4,12 @@ from collections import defaultdict
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
+from io import BytesIO
 
-def preparar_dataframes(contactos_path, egresados_path):
-    contactos_df = pd.read_excel(contactos_path)
-    egresados_df = pd.read_excel(egresados_path)
+def preparar_dataframes(contactos_data, egresados_data):
+    # Leer los archivos Excel desde el flujo en memoria
+    contactos_df = pd.read_excel(contactos_data)
+    egresados_df = pd.read_excel(egresados_data)
     contactos_df['Nombre'] = contactos_df[['First Name', 'Middle Name', 'Last Name']].fillna('').agg(' '.join, axis=1).str.strip()
     return contactos_df, egresados_df
 
@@ -60,8 +62,8 @@ def ajustar_filas_y_columnas(worksheet):
                     max_height = cell_height
         worksheet.row_dimensions[cell.row].height = max_height * 15  # Approximate height per line
 
-def generar_archivo_combinado(contactos_path, egresados_path, output_path, progress_bar):
-    contactos_df, egresados_df = preparar_dataframes(contactos_path, egresados_path)
+def generar_archivo_combinado(contactos_data, egresados_data, output_stream, progress_bar):
+    contactos_df, egresados_df = preparar_dataframes(contactos_data, egresados_data)
     contactos_df['Nombre'] = contactos_df['Nombre'].apply(normalize_name)
     egresados_df['Nombres'] = egresados_df['Nombres'].apply(normalize_name)
 
@@ -104,17 +106,20 @@ def generar_archivo_combinado(contactos_path, egresados_path, output_path, progr
         # Update progress
         progress_bar.progress(int((idx + 1) / total_rows * 100))
 
-    # Convertir los resultados en un DataFrame
+    # Convert the results to a DataFrame
     resultados_df = pd.DataFrame(resultados)
 
-    # Ordenar por Coincidencias y luego por Certeza
-    resultados_df.sort_values(by=['Coincidencias', 'Certeza'], ascending=[False, False], inplace=True)
+    # Save the results to an Excel file in memory
+    with pd.ExcelWriter(output_stream, engine='openpyxl') as writer:
+        resultados_df.to_excel(writer, index=False)
 
-    # Guardar el resultado en un archivo Excel
-    resultados_df.to_excel(output_path, index=False)
-
-    # Ajustar las filas y columnas para que ocupen el espacio necesario
-    workbook = load_workbook(output_path)
+    # Adjust the rows and columns
+    output_stream.seek(0)
+    workbook = load_workbook(output_stream)
     worksheet = workbook.active
     ajustar_filas_y_columnas(worksheet)
-    workbook.save(output_path)
+    
+    # Save the changes back to the in-memory stream
+    output_stream.seek(0)  # Important to reset the stream position
+    workbook.save(output_stream)
+    output_stream.seek(0)  # Ensure the stream is ready for reading from the start
