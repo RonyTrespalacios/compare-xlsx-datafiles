@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
+import gdown
 from processing import generar_archivo_combinado
 
 def csv_to_xlsx(csv_file):
@@ -12,6 +13,19 @@ def csv_to_xlsx(csv_file):
     df.to_excel(output, index=False, engine='openpyxl')
     output.seek(0)  # Mover el cursor al principio del stream
     return output
+
+def descargar_archivo_de_drive(url):
+    # Descargar archivo desde Google Drive
+    output = BytesIO()
+    gdown.download(url, output, quiet=True)
+    output.seek(0)
+    return output
+
+# URLs de los archivos en Google Drive (con IDs extraídos)
+urls = {
+    "consulta_rector.xlsx": "https://drive.google.com/uc?id=1yuSFCLANAEr7OsRRSvDU73olHp3WneGr",
+    "consulta_egresados.xlsx": "https://drive.google.com/uc?id=1UAYVyExPRdp4BfZ7jR4B92YfcMFbpBHO"
+}
 
 # Título y descripción de la aplicación
 st.title("📊 Compara tus contactos con la base de datos de habilitados a votar!!")
@@ -44,19 +58,22 @@ progress_bar = st.progress(0)
 # Botón para procesar archivos
 if st.button("Click para comparar!! 👇"):
     if contactos_file:
-        # Si el archivo de contactos es CSV, convertirlo a Excel
-        if contactos_file.name.endswith('.csv'):
-            contactos_data = csv_to_xlsx(contactos_file)
-        else:
-            contactos_data = BytesIO(contactos_file.getvalue())
+        # Mostrar indicador de carga mientras se procesa el archivo CSV
+        with st.spinner('Procesando tu archivo de contactos...'):
+            # Si el archivo de contactos es CSV, convertirlo a Excel
+            if contactos_file.name.endswith('.csv'):
+                contactos_data = csv_to_xlsx(contactos_file)
+            else:
+                contactos_data = BytesIO(contactos_file.getvalue())
 
-        # Cargar el archivo de la base de datos seleccionada
-        try:
-            with open(db_file, 'rb') as f:
-                egresados_data = BytesIO(f.read())
-        except Exception as e:
-            st.error(f"⚠️ Ocurrió un error al cargar la base de datos: {str(e)}")
-            egresados_data = None
+        # Mostrar indicador de carga mientras se descarga la base de datos
+        with st.spinner('Descargando la base de datos seleccionada...'):
+            # Descargar el archivo de la base de datos seleccionada desde Google Drive
+            try:
+                egresados_data = descargar_archivo_de_drive(urls[db_file])
+            except Exception as e:
+                st.error(f"⚠️ Ocurrió un error al descargar la base de datos: {str(e)}")
+                egresados_data = None
 
         if egresados_data:
             # Crear un flujo de salida en memoria para el resultado
@@ -64,9 +81,11 @@ if st.button("Click para comparar!! 👇"):
 
             # Ejecutar la función de procesamiento
             try:
-                generar_archivo_combinado(contactos_data, egresados_data, output_data, progress_bar)
-                output_data.seek(0)  # Restablecer el cursor al principio del stream
+                with st.spinner('Comparando y generando el archivo final...'):
+                    generar_archivo_combinado(contactos_data, egresados_data, output_data, progress_bar)
+                    output_data.seek(0)  # Restablecer el cursor al principio del stream
 
+                st.success("✅ Comparación completada con éxito!")
                 st.download_button(
                     label="⬇️ Descargar archivo procesado",
                     data=output_data,
