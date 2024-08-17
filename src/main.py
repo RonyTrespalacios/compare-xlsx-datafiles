@@ -14,66 +14,66 @@ def csv_to_xlsx(csv_file):
     return output
 
 # Título y descripción de la aplicación
-st.title("📊 Data Processing App")
+st.title("📊 Compara tus contactos con la base de datos de habilitados a votar!!")
 
-# Sección 1: Convertidor de CSV a Excel
-st.header("🔄 CSV 2 Excel Converter")
+# Sección: Cargar archivo de contactos
+st.header("⬇️ Subir tu lista de contactos")
+contactos_file = st.file_uploader("Por favor, sube tu archivo de contactos (puede ser en formato CSV o Excel)", type=["csv", "xlsx"], key="contactos_upload")
 
-# Cargador de archivos CSV
-uploaded_csv = st.file_uploader("📁 Choose a CSV file", type="csv", key="csv_upload")
+# Botones de selección única para elegir la base de datos a comparar
+st.header("Base de datos para comparar ⚙️")
+db_option = st.radio(
+    "Selecciona la base de datos con la que deseas comparar tus contactos:",
+    options=[
+        ("consulta_egresados.xlsx", "Censo para elección representante de egresados"),
+        ("consulta_rector.xlsx", "Censo de egresados para la consulta rectoral")
+    ],
+    index=0,  # Establece "Censo de egresados para la consulta rectoral" como predeterminada
+    format_func=lambda x: x[1]  # Muestra solo el label en la interfaz
+)
 
-# Entrada de texto para el nombre del archivo de salida
-output_filename_csv = st.text_input("💾 Enter Output File Name (without extension)", value="contacts")
-
-if uploaded_csv is not None:
-    # Convertir CSV a Excel en memoria
-    excel_data = csv_to_xlsx(uploaded_csv)
-    
-    st.download_button(
-        label="⬇️ Download Excel file",
-        data=excel_data,
-        file_name=f"{output_filename_csv}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-# Sección 2: Procesar Archivos Excel
-st.header("🔍 Compare Excel Files (Contactos and Egresados)")
-
-# Título y descripción
-st.write("📑 This application processes Excel files by matching and sorting data.")
-
-# Cargador de archivos para Contactos y Egresados
-contactos_file = st.file_uploader("📂 Upload Contactos File", type=["xlsx"], key="contactos_upload")
-egresados_file = st.file_uploader("📂 Upload Egresados File", type=["xlsx"], key="egresados_upload")
+# Extrae el nombre del archivo seleccionado
+db_file = db_option[0]
 
 # Entrada de texto para el nombre del archivo de salida
-output_filename = st.text_input("💾 Enter Output File Name (without extension)", value="result")
+output_filename = st.text_input("💾 Ingrese el nombre del archivo de salida (sin extensión)", value="resultado")
 
 # Barra de progreso
 progress_bar = st.progress(0)
 
 # Botón para procesar archivos
-if st.button("⚙️ Match and Sort Files"):
-    if contactos_file and egresados_file:
-        # Crear flujos binarios en memoria para los archivos subidos
-        contactos_data = BytesIO(contactos_file.getvalue())
-        egresados_data = BytesIO(egresados_file.getvalue())
+if st.button("Click para comparar!! 👇"):
+    if contactos_file:
+        # Si el archivo de contactos es CSV, convertirlo a Excel
+        if contactos_file.name.endswith('.csv'):
+            contactos_data = csv_to_xlsx(contactos_file)
+        else:
+            contactos_data = BytesIO(contactos_file.getvalue())
 
-        # Crear un flujo de salida en memoria para el resultado
-        output_data = BytesIO()
-
-        # Ejecutar la función de procesamiento
+        # Cargar el archivo de la base de datos seleccionada
         try:
-            generar_archivo_combinado(contactos_data, egresados_data, output_data, progress_bar)
-            output_data.seek(0)  # Restablecer el cursor al principio del stream
-
-            st.download_button(
-                label="⬇️ Download Processed File",
-                data=output_data,
-                file_name=f"{output_filename}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            with open(db_file, 'rb') as f:
+                egresados_data = BytesIO(f.read())
         except Exception as e:
-            st.error(f"⚠️ An error occurred: {str(e)}")
+            st.error(f"⚠️ Ocurrió un error al cargar la base de datos: {str(e)}")
+            egresados_data = None
+
+        if egresados_data:
+            # Crear un flujo de salida en memoria para el resultado
+            output_data = BytesIO()
+
+            # Ejecutar la función de procesamiento
+            try:
+                generar_archivo_combinado(contactos_data, egresados_data, output_data, progress_bar)
+                output_data.seek(0)  # Restablecer el cursor al principio del stream
+
+                st.download_button(
+                    label="⬇️ Descargar archivo procesado",
+                    data=output_data,
+                    file_name=f"{output_filename}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            except Exception as e:
+                st.error(f"⚠️ Ocurrió un error: {str(e)}")
     else:
-        st.error("⚠️ Please upload both Contactos and Egresados files.")
+        st.error("⚠️ Por favor, sube un archivo de contactos.")
