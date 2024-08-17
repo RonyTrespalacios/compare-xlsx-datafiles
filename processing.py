@@ -69,7 +69,7 @@ def generar_archivo_combinado(contactos_data, egresados_data, output_stream, pro
 
     # Verificar las columnas de teléfono
     telefono1_col = 'Phone 1 - Value' if 'Phone 1 - Value' in contactos_df.columns else 'Mobile Phone'
-    telefono2_col = 'Phone 2 - Value' if 'Phone 2 - Value' in contactos_df.columns else ('Primary Phone' if 'Other Phone' in contactos_df.columns else 'Primary Phone')
+    telefono2_col = 'Phone 2 - Value' if 'Phone 2 - Value' in contactos_df.columns else ('Other Phone' if 'Other Phone' in contactos_df.columns else 'Primary Phone')
 
     keyword_index = defaultdict(list)
     for index, egresado in egresados_df.iterrows():
