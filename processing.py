@@ -69,7 +69,7 @@ def generar_archivo_combinado(contactos_data, egresados_data, output_stream, pro
 
     # Verificar las columnas de teléfono
     telefono1_col = 'Phone 1 - Value' if 'Phone 1 - Value' in contactos_df.columns else 'Mobile Phone'
-    telefono2_col = 'Phone 2 - Value' if 'Phone 2 - Value' in contactos_df.columns else ('Other Phone' if 'Other Phone' in contactos_df.columns else 'Primary Phone')
+    telefono2_col = 'Phone 2 - Value' if 'Phone 2 - Value' in contactos_df.columns else ('Other Phone' if 'Other Phone' in contactos_df.columns else None)
 
     keyword_index = defaultdict(list)
     for index, egresado in egresados_df.iterrows():
@@ -100,15 +100,19 @@ def generar_archivo_combinado(contactos_data, egresados_data, output_stream, pro
                 mejor_similitud = similitud
                 mejor_match = egresados_df.loc[index2]
         if mejor_match is not None:
-            resultados.append({
+            resultado = {
                 'Cedula': mejor_match['Cedula'],
                 'Nombre': nombre_contacto,
                 'Telefono1': contacto[telefono1_col],
-                'Telefono2': contacto[telefono2_col],
                 'Nombre Egresado': mejor_match['Nombres'],
                 'Certeza': mejor_similitud * 100,
                 'Coincidencias': mejor_coincidencias
-            })
+            }
+
+            if telefono2_col:
+                resultado['Telefono2'] = contacto[telefono2_col]
+
+            resultados.append(resultado)
 
         # Update progress
         progress_bar.progress(int((idx + 1) / total_rows * 100))
