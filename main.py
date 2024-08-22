@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
-import gdown
 from processing import generar_archivo_combinado
 
 def csv_to_xlsx(csv_file):
@@ -14,18 +13,8 @@ def csv_to_xlsx(csv_file):
     output.seek(0)  # Mover el cursor al principio del stream
     return output
 
-def descargar_archivo_de_drive(url):
-    # Descargar archivo desde Google Drive
-    output = BytesIO()
-    gdown.download(url, output, quiet=True)
-    output.seek(0)
-    return output
-
-# URLs de los archivos en Google Drive (con IDs extraídos)
-urls = {
-    "consulta_rector.xlsx": "https://drive.google.com/uc?id=1yuSFCLANAEr7OsRRSvDU73olHp3WneGr",
-    "consulta_egresados.xlsx": "https://drive.google.com/uc?id=1UAYVyExPRdp4BfZ7jR4B92YfcMFbpBHO"
-}
+# Ruta del archivo local de la base de datos
+db_file_path = "consulta_rector.xlsx"
 
 # Título y descripción de la aplicación
 st.title("📊 Compara tus contactos con la base de datos de habilitados a votar!!")
@@ -33,21 +22,6 @@ st.title("📊 Compara tus contactos con la base de datos de habilitados a votar
 # Sección: Cargar archivo de contactos
 st.header("⬇️ Subir tu lista de contactos")
 contactos_file = st.file_uploader("Por favor, sube tu archivo de contactos (puede ser en formato CSV o Excel)", type=["csv", "xlsx"], key="contactos_upload")
-
-# Botones de selección única para elegir la base de datos a comparar
-st.header("Base de datos para comparar ⚙️")
-db_option = st.radio(
-    "Selecciona la base de datos con la que deseas comparar tus contactos:",
-    options=[
-        ("consulta_egresados.xlsx", "Censo para elección representante de egresados"),
-        ("consulta_rector.xlsx", "Censo de egresados para la consulta rectoral")
-    ],
-    index=0,  # Establece "Censo de egresados para la consulta rectoral" como predeterminada
-    format_func=lambda x: x[1]  # Muestra solo el label en la interfaz
-)
-
-# Extrae el nombre del archivo seleccionado
-db_file = db_option[0]
 
 # Entrada de texto para el nombre del archivo de salida
 output_filename = st.text_input("💾 Ingrese el nombre del archivo de salida (sin extensión)", value="resultado")
@@ -66,14 +40,13 @@ if st.button("Click para comparar!! 👇"):
             else:
                 contactos_data = BytesIO(contactos_file.getvalue())
 
-        # Mostrar indicador de carga mientras se descarga la base de datos
-        with st.spinner('Descargando la base de datos seleccionada...'):
-            # Descargar el archivo de la base de datos seleccionada desde Google Drive
-            try:
-                egresados_data = descargar_archivo_de_drive(urls[db_file])
-            except Exception as e:
-                st.error(f"⚠️ Ocurrió un error al descargar la base de datos: {str(e)}")
-                egresados_data = None
+        # Leer el archivo de la base de datos local
+        try:
+            with st.spinner('Cargando la base de datos seleccionada...'):
+                egresados_data = BytesIO(open(db_file_path, 'rb').read())
+        except Exception as e:
+            st.error(f"⚠️ Ocurrió un error al cargar la base de datos: {str(e)}")
+            egresados_data = None
 
         if egresados_data:
             # Crear un flujo de salida en memoria para el resultado
