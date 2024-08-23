@@ -84,7 +84,6 @@ def generar_archivo_combinado(contactos_data, egresados_data, output_stream, pro
     telefono1_col = 'Phone 1 - Value' if 'Phone 1 - Value' in contactos_df.columns else 'Mobile Phone'
     telefono2_col = 'Phone 2 - Value' if 'Phone 2 - Value' in contactos_df.columns else ('Other Phone' if 'Other Phone' in contactos_df.columns else None)
     
-    # Asegurar que exista la columna Telefono 2, incluso si no está en los datos originales
     if telefono2_col not in contactos_df.columns:
         contactos_df[telefono2_col] = ''
 
@@ -122,13 +121,13 @@ def generar_archivo_combinado(contactos_data, egresados_data, output_stream, pro
             resultado = {
                 'Cedula': mejor_match['Cedula'],
                 'Mi Contacto': nombre_contacto,
-                'Encontrado': mejor_match['Nombres'],  # Cambio de "Nombre votante" a "Encontrado"
-                'Tipo': mejor_match['Tipo'],  # Tipo incluido
+                'Encontrado': mejor_match['Nombres'],
+                'Tipo': mejor_match['Tipo'],
                 'Telefono1': contacto[telefono1_col],
-                'Telefono2': contacto[telefono2_col],  # Añadido Telefono2
+                'Telefono2': contacto[telefono2_col],
                 'Acierto [%]': promedio_acierto,
                 'TELEFONO': limpiar_telefono(contacto[telefono1_col]) if not pd.isna(contacto[telefono1_col]) else limpiar_telefono(contacto[telefono2_col]),
-                'PrimerNombre': extraer_primer_nombre(nombre_contacto)
+                'NOMBRE': extraer_primer_nombre(mejor_match['Nombres'])  # Nueva columna
             }
 
             resultados.append(resultado)
@@ -202,7 +201,7 @@ def generar_archivo_filtro_unillanos(contactos_data, egresados_data, output_stre
                 'Telefono2': contacto[telefono2_col],
                 'Acierto [%]': promedio_acierto,
                 'TELEFONO': limpiar_telefono(contacto[telefono1_col]) if not pd.isna(contacto[telefono1_col]) else limpiar_telefono(contacto[telefono2_col]),
-                'PrimerNombre': extraer_primer_nombre(nombre_contacto)
+                'NOMBRE': extraer_primer_nombre(mejor_match['Nombres'])  # Nueva columna
             }
 
             resultados.append(resultado)
@@ -215,7 +214,7 @@ def generar_archivo_filtro_unillanos(contactos_data, egresados_data, output_stre
     resultados_df.sort_values(by=['Acierto [%]'], ascending=False, inplace=True)
 
     # Filtrar y ordenar primero los contactos que contienen 'U' o 'Unillanos' (no case sensitive)
-    mask_u_unillanos = resultados_df['Mi Contacto'].str.contains(r'\bU\b|\bUnillanos\b', case=False, regex=True)
+    mask_u_unillanos = resultados_df['Mi Contacto'].str.contains(r'\bU\b|\bUnillanos\b|\bULL\b', case=False, regex=True)
     resultados_df = pd.concat([resultados_df[mask_u_unillanos], resultados_df[~mask_u_unillanos]])
 
     workbook = Workbook()
