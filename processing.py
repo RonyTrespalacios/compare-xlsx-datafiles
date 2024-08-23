@@ -150,3 +150,82 @@ def generar_archivo_combinado(contactos_data, egresados_data, output_stream, pro
 
     workbook.save(output_stream)
     output_stream.seek(0)
+
+def generar_archivo_filtro_unillanos(contactos_data, egresados_data, output_stream, progress_bar):
+    contactos_df, egresados_df = preparar_dataframes(contactos_data, egresados_data)
+    contactos_df['Nombre'] = contactos_df['Nombre'].apply(normalize_name)
+    egresados_df['Nombres'] = egresados_df['Nombres'].apply(normalize_name)
+
+    telefono1_col = 'Phone 1 - Value' if 'Phone 1 - Value' in contactos_df.columns else 'Mobile Phone'
+    telefono2_col = 'Phone 2 - Value' if 'Phone 2 - Value' in contactos_df.columns else ('Other Phone' if 'Other Phone' in contactos_df.columns else None)
+
+    if telefono2_col not in contactos_df.columns:
+        contactos_df[telefono2_col] = ''
+
+    keyword_index = defaultdict(list)
+    for index, egresado in egresados_df.iterrows():
+        words = set(egresado['Nombres'].split())
+        for word in words:
+            keyword_index[word].append((index, egresado['Nombres']))
+
+    resultados = []
+
+    total_rows = len(contactos_df)
+    for idx, contacto in enumerate(contactos_df.iterrows()):
+        index, contacto = contacto
+        nombre_contacto = contacto['Nombre']
+        palabras_contacto = set(nombre_contacto.split())
+        posibles_candidatos = set()
+        for palabra in palabras_contacto:
+            if palabra in keyword_index:
+                posibles_candidatos.update(keyword_index[palabra])
+        mejor_match = None
+        mejor_similitud = 0
+        mejor_coincidencias = 0
+        for candidato in posibles_candidatos:
+            index2, nombre_egresado = candidato
+            similitud = similar(nombre_contacto, nombre_egresado)
+            coincidencias = calcular_coincidencias(nombre_contacto, nombre_egresado)
+            if coincidencias > mejor_coincidencias or (coincidencias == mejor_coincidencias and similitud > mejor_similitud):
+                mejor_coincidencias = coincidencias
+                mejor_similitud = similitud
+                mejor_match = egresados_df.loc[index2]
+        if mejor_match is not None:
+            porcentaje_coincidencias = (mejor_coincidencias / len(set(mejor_match['Nombres'].split()))) * 100
+            promedio_acierto = (mejor_similitud * 100 + porcentaje_coincidencias) / 2
+            resultado = {
+                'Cedula': mejor_match['Cedula'],
+                'Mi Contacto': nombre_contacto,
+                'Encontrado': mejor_match['Nombres'],
+                'Tipo': mejor_match['Tipo'],
+                'Telefono1': contacto[telefono1_col],
+                'Telefono2': contacto[telefono2_col],
+                'Acierto [%]': promedio_acierto,
+                'TELEFONO': limpiar_telefono(contacto[telefono1_col]) if not pd.isna(contacto[telefono1_col]) else limpiar_telefono(contacto[telefono2_col]),
+                'PrimerNombre': extraer_primer_nombre(nombre_contacto)
+            }
+
+            resultados.append(resultado)
+
+        progress_bar.progress(int((idx + 1) / total_rows * 100))
+
+    resultados_df = pd.DataFrame(resultados)
+
+    # Ordenar por 'Acierto [%]' de mayor a menor
+    resultados_df.sort_values(by=['Acierto [%]'], ascending=False, inplace=True)
+
+    # Filtrar y ordenar primero los contactos que contienen 'U' o 'Unillanos' (no case sensitive)
+    mask_u_unillanos = resultados_df['Mi Contacto'].str.contains(r'\bU\b|\bUnillanos\b', case=False, regex=True)
+    resultados_df = pd.concat([resultados_df[mask_u_unillanos], resultados_df[~mask_u_unillanos]])
+
+    workbook = Workbook()
+    worksheet = workbook.active
+
+    for r_idx, row in enumerate(dataframe_to_rows(resultados_df, index=False, header=True), 1):
+        for c_idx, value in enumerate(row, 1):
+            worksheet.cell(row=r_idx, column=c_idx, value=value)
+
+    ajustar_filas_y_columnas(worksheet)
+
+    workbook.save(output_stream)
+    output_stream.seek(0)
