@@ -1,6 +1,9 @@
 # Excel File Processor Application
 
 This application processes Excel files by matching and sorting data, and it provides a user-friendly interface built with streamlit.
+<p align="center">
+  <img src="./img/video_demo.gif" alt="GIT demo" width="400"/>
+</p>
 
 ## Setup Instructions
 
