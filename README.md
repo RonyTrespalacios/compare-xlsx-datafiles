@@ -1,6 +1,6 @@
 # Excel File Processor Application
 
-This application processes Excel files by matching and sorting data, and it provides a user-friendly interface built with PyQt5. The application can be packaged into a standalone `.exe` file for easy distribution.
+This application processes Excel files by matching and sorting data, and it provides a user-friendly interface built with streamlit.
 
 ## Setup Instructions
 
@@ -23,15 +23,7 @@ try:
 pip install -r requirements.txt
 ```
 
-or : 
-
-```bash
-pip install pandas
-pip install PyQt5
-pip install openpyxl
-```
-
-To run the application, navigate to the /src directory and execute:
+To run the application, execute:
 
 ```bash
 streamlit run main.py
