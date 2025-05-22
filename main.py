@@ -89,7 +89,7 @@ def convertir_vcf_a_csv(vcf_file):
     
     return output
 
-db_file_path = "consulta_rector.xlsx"
+db_file_path = "EGRESADOS FCBI.xlsx"
 
 st.title("📊 Compara tus contactos y más!")
 
